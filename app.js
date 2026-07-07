@@ -28,7 +28,7 @@ const dati = {
 };
 
 const { error } = await client
-.from("Valutazione_olio")
+.from("valutazione")
 .insert([dati]);
 
 if(error){
