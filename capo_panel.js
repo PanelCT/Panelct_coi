@@ -1,6 +1,10 @@
 const SUPABASE_URL = "https://wxgkjaobfvwwcgywtwfe.supabase.co";
 
-const SUPABASE_KEY = "INCOLLA_QUI_LA_TUA_PUBLISHABLE_KEY";
+const SUPABASE_KEY = "INCOLLA_LA_TUA_PUBLISHABLE_KEY";
+
+
+console.log("URL:", SUPABASE_URL);
+console.log("KEY:", SUPABASE_KEY.substring(0,20));
 
 
 const client = supabase.createClient(
@@ -12,7 +16,6 @@ const client = supabase.createClient(
 document.getElementById("nuovaSessione").onclick = async function () {
 
   let codice = "PANEL-" + new Date().toISOString().slice(0,10);
-
 
   const { data, error } = await client
     .from("sessioni")
