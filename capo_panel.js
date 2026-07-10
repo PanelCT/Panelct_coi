@@ -1,12 +1,10 @@
-document.getElementById("nuovaSessione").addEventListener("click", () => {
-  const id = "PANEL-" + new Date().toISOString().slice(0, 10);
-  localStorage.setItem("sessioneCorrente", id);
-  document.getElementById("sessioneCorrente").textContent =
-    "Sessione attiva: " + id;
-});
+alert("Capo Panel funzionante");
 
-const s = localStorage.getItem("sessioneCorrente");
-if (s) {
-  document.getElementById("sessioneCorrente").textContent =
-    "Sessione attiva: " + s;
-}
+document.getElementById("nuovaSessione").onclick = function() {
+  let id = "PANEL-" + new Date().toISOString().slice(0,10);
+
+  document.getElementById("sessioneCorrente").innerHTML =
+    "Sessione attiva: " + id;
+
+  localStorage.setItem("sessioneCorrente", id);
+}; 
