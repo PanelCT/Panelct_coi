@@ -9,4 +9,4 @@ const s = localStorage.getItem("sessioneCorrente");
 if (s) {
   document.getElementById("sessioneCorrente").textContent =
     "Sessione attiva: " + s;
-} 
+}
