@@ -1,6 +1,6 @@
 const SUPABASE_URL = "https://wxgkjaobfvwwcgywtwfe.supabase.co";
 
-const SUPABASE_KEY = "INCOLLA_LA_TUA_PUBLISHABLE_KEY";
+const SUPABASE_KEY = "sb_publishable_y7VLZqRuOhdFATOyxGf5lw_hZiTmOh7";
 
 
 console.log("URL:", SUPABASE_URL);
