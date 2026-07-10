@@ -9,6 +9,7 @@ const client = supabase.createClient(
 );
 
 
+
 document.getElementById("nuovaSessione").onclick = async function () {
 
   let codice = "PANEL-" + new Date().toISOString().slice(0,10);
@@ -38,44 +39,63 @@ document.getElementById("nuovaSessione").onclick = async function () {
 
 
 
-document.getElementById("esportaExcel").onclick = function () {
 
-  alert("Esportazione Excel in preparazione");
-
-};
-
-
-
-document.getElementById("visualizzaSchede").onclick = async function () {
-
-
-  const { data: sessione, error: erroreSessione } = await client
-    .from("sessioni")
-    .select("id")
-    .eq("attiva", true)
-    .order("id", { ascending: false })
-    .limit(1)
-    .single();
-
-
-  if (erroreSessione) {
-    alert("Errore sessione: " + erroreSessione.message);
-    return;
-  }
+document.getElementById("esportaExcel").onclick = async function () {
 
 
   const { data, error } = await client
     .from("valutazione")
-    .select("*")
-    .eq("sessione_id", sessione.id);
+    .select("*");
 
 
   if (error) {
-    alert("Errore: " + error.message);
+    alert("Errore esportazione: " + error.message);
     return;
   }
 
 
-  alert("Schede ricevute: " + data.length);
+  if (!data || data.length === 0) {
+    alert("Nessuna scheda da esportare");
+    return;
+  }
 
-}; 
+
+
+  let csv = "";
+
+
+  const intestazioni = Object.keys(data[0]);
+
+
+  csv += intestazioni.join(";") + "\n";
+
+
+
+  data.forEach(riga => {
+
+    csv += intestazioni.map(colonna =>
+      riga[colonna] ?? ""
+    ).join(";") + "\n";
+
+  });
+
+
+
+  const blob = new Blob(
+    [csv],
+    { type: "text/csv;charset=utf-8;" }
+  );
+
+
+  const link = document.createElement("a");
+
+
+  link.href = URL.createObjectURL(blob);
+
+
+  link.download = "schede_panelct.csv";
+
+
+  link.click();
+
+};
