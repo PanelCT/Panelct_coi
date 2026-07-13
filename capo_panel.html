@@ -64,6 +64,7 @@
       color: #48652f;
       font-size: 19px;
       font-weight: 700;
+      word-break: break-word;
     }
 
     .azioni {
@@ -79,6 +80,11 @@
       font-size: 17px;
       font-weight: 700;
       cursor: pointer;
+    }
+
+    button:disabled {
+      opacity: 0.55;
+      cursor: wait;
     }
 
     button:active {
@@ -104,6 +110,7 @@
       margin-top: 20px;
       text-align: center;
       font-weight: 700;
+      line-height: 1.5;
     }
 
     .nota {
@@ -150,15 +157,18 @@
     <p id="messaggioCapoPanel"></p>
 
     <p class="nota">
-      “Nuova valutazione” chiude la raccolta precedente e prepara
-      una nuova prova, senza cancellare lo storico.
+      Il file Excel viene compilato con le schede della sola
+      sessione attiva, senza cancellare lo storico.
     </p>
 
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  <script src="capo_panel.js?v=302"></script>
+  <!-- Libreria necessaria per modificare il modello Excel -->
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+
+  <script src="capo_panel.js?v=400"></script>
 
 </body>
 
