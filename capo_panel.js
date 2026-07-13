@@ -18,9 +18,6 @@ const testoSessione =
 const messaggio =
   document.getElementById("messaggioCapoPanel");
 
-const pulsanteNuovaSessione =
-  document.getElementById("nuovaSessione");
-
 const pulsanteNuovaValutazione =
   document.getElementById("nuovaValutazione");
 
@@ -37,29 +34,29 @@ function mostraMessaggio(testo, errore = false) {
 }
 
 
-function generaCodiceSessione() {
-  const adesso = new Date();
+function generaCodiceValutazione() {
+  const data = new Date();
 
-  const anno = adesso.getFullYear();
+  const anno = data.getFullYear();
 
   const mese = String(
-    adesso.getMonth() + 1
+    data.getMonth() + 1
   ).padStart(2, "0");
 
   const giorno = String(
-    adesso.getDate()
+    data.getDate()
   ).padStart(2, "0");
 
   const ore = String(
-    adesso.getHours()
+    data.getHours()
   ).padStart(2, "0");
 
   const minuti = String(
-    adesso.getMinutes()
+    data.getMinutes()
   ).padStart(2, "0");
 
   const secondi = String(
-    adesso.getSeconds()
+    data.getSeconds()
   ).padStart(2, "0");
 
   return (
@@ -69,7 +66,7 @@ function generaCodiceSessione() {
 }
 
 
-async function recuperaSessioneAttiva() {
+async function recuperaValutazioneAttiva() {
   const { data, error } = await client
     .from("sessioni")
     .select("id, codice_sessione, attiva")
@@ -102,7 +99,7 @@ async function aggiornaConteggioSchede(
 
   if (error) {
     mostraMessaggio(
-      "Sessione attiva, ma non riesco a contare le schede: " +
+      "Valutazione attiva, ma non riesco a contare le schede: " +
       error.message,
       true
     );
@@ -111,20 +108,20 @@ async function aggiornaConteggioSchede(
   }
 
   mostraMessaggio(
-    "Schede ricevute nella sessione corrente: " +
+    "Schede ricevute: " +
     (count ?? 0)
   );
 }
 
 
-async function mostraSessioneAttiva() {
+async function mostraValutazioneAttiva() {
   try {
     const sessione =
-      await recuperaSessioneAttiva();
+      await recuperaValutazioneAttiva();
 
     if (!sessione) {
       testoSessione.textContent =
-        "Nessuna sessione attiva";
+        "Nessuna valutazione attiva";
 
       mostraMessaggio("");
 
@@ -143,7 +140,7 @@ async function mostraSessioneAttiva() {
       "Errore nel caricamento";
 
     mostraMessaggio(
-      "Errore lettura sessione: " +
+      "Errore lettura valutazione: " +
       errore.message,
       true
     );
@@ -151,29 +148,24 @@ async function mostraSessioneAttiva() {
 }
 
 
-async function creaNuovaSessione(
-  tipoOperazione
-) {
-  const testoConferma =
-    tipoOperazione === "valutazione"
-      ? (
-        "Vuoi chiudere la valutazione attuale " +
-        "e iniziarne una nuova?"
-      )
-      : (
-        "Vuoi creare una nuova sessione? " +
-        "Le precedenti verranno disattivate."
-      );
+async function creaNuovaValutazione() {
+  const conferma = confirm(
+    "Vuoi chiudere la valutazione attuale " +
+    "e iniziarne una nuova?"
+  );
 
-  if (!confirm(testoConferma)) {
+  if (!conferma) {
     return;
   }
 
-  pulsanteNuovaSessione.disabled = true;
-  pulsanteNuovaValutazione.disabled = true;
+  pulsanteNuovaValutazione.disabled =
+    true;
+
+  pulsanteEsporta.disabled =
+    true;
 
   mostraMessaggio(
-    "Creazione della nuova sessione..."
+    "Creazione della nuova valutazione..."
   );
 
   try {
@@ -187,15 +179,16 @@ async function creaNuovaSessione(
 
     if (erroreChiusura) {
       throw new Error(
-        "Impossibile chiudere la sessione precedente: " +
+        "Impossibile chiudere la valutazione precedente: " +
         erroreChiusura.message
       );
     }
 
-    const codice = generaCodiceSessione();
+    const codice =
+      generaCodiceValutazione();
 
     const {
-      data: nuovaSessione,
+      data: nuovaValutazione,
       error: erroreCreazione
     } = await client
       .from("sessioni")
@@ -217,12 +210,10 @@ async function creaNuovaSessione(
     }
 
     testoSessione.textContent =
-      nuovaSessione.codice_sessione;
+      nuovaValutazione.codice_sessione;
 
     mostraMessaggio(
-      tipoOperazione === "valutazione"
-        ? "Nuova valutazione pronta. Schede ricevute: 0"
-        : "Nuova sessione creata. Schede ricevute: 0"
+      "Nuova valutazione pronta. Schede ricevute: 0"
     );
 
   } catch (errore) {
@@ -232,42 +223,58 @@ async function creaNuovaSessione(
     );
 
   } finally {
-    pulsanteNuovaSessione.disabled =
+    pulsanteNuovaValutazione.disabled =
       false;
 
-    pulsanteNuovaValutazione.disabled =
+    pulsanteEsporta.disabled =
       false;
   }
 }
 
 
 /*
- * Cerca nel file Excel il percorso XML
- * corrispondente al foglio "INPUT Data".
+ * Individua il file XML interno corrispondente
+ * al foglio "INPUT Data".
  */
-async function trovaPercorsoFoglioInput(zip) {
-  const workbookXmlText =
-    await zip.file("xl/workbook.xml").async("text");
+async function trovaFoglioInput(zip) {
+  const workbookFile =
+    zip.file("xl/workbook.xml");
 
-  const relsXmlText =
-    await zip
-      .file("xl/_rels/workbook.xml.rels")
-      .async("text");
+  const relazioniFile =
+    zip.file(
+      "xl/_rels/workbook.xml.rels"
+    );
+
+  if (!workbookFile || !relazioniFile) {
+    throw new Error(
+      "Il modello Excel non contiene la struttura prevista."
+    );
+  }
+
+  const workbookTesto =
+    await workbookFile.async("text");
+
+  const relazioniTesto =
+    await relazioniFile.async("text");
 
   const parser = new DOMParser();
 
-  const workbookXml = parser.parseFromString(
-    workbookXmlText,
-    "application/xml"
-  );
+  const workbookXml =
+    parser.parseFromString(
+      workbookTesto,
+      "application/xml"
+    );
 
-  const relsXml = parser.parseFromString(
-    relsXmlText,
-    "application/xml"
-  );
+  const relazioniXml =
+    parser.parseFromString(
+      relazioniTesto,
+      "application/xml"
+    );
 
   const fogli =
-    workbookXml.getElementsByTagName("sheet");
+    workbookXml.getElementsByTagName(
+      "sheet"
+    );
 
   let relazioneId = null;
 
@@ -277,9 +284,7 @@ async function trovaPercorsoFoglioInput(zip) {
       "INPUT Data"
     ) {
       relazioneId =
-        foglio.getAttribute(
-          "r:id"
-        ) ||
+        foglio.getAttribute("r:id") ||
         foglio.getAttributeNS(
           "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
           "id"
@@ -291,12 +296,12 @@ async function trovaPercorsoFoglioInput(zip) {
 
   if (!relazioneId) {
     throw new Error(
-      'Nel modello non trovo il foglio "INPUT Data".'
+      'Non trovo il foglio "INPUT Data" nel modello.'
     );
   }
 
   const relazioni =
-    relsXml.getElementsByTagName(
+    relazioniXml.getElementsByTagName(
       "Relationship"
     );
 
@@ -308,10 +313,8 @@ async function trovaPercorsoFoglioInput(zip) {
       let percorso =
         relazione.getAttribute("Target");
 
-      percorso = percorso.replace(
-        /^\//,
-        ""
-      );
+      percorso =
+        percorso.replace(/^\//, "");
 
       if (!percorso.startsWith("xl/")) {
         percorso = "xl/" + percorso;
@@ -322,7 +325,7 @@ async function trovaPercorsoFoglioInput(zip) {
   }
 
   throw new Error(
-    "Non riesco a individuare il file interno del foglio INPUT Data."
+    "Non riesco a individuare internamente il foglio INPUT Data."
   );
 }
 
@@ -333,12 +336,15 @@ function trovaONuovaRiga(
   numeroRiga
 ) {
   const righe =
-    sheetData.getElementsByTagName("row");
+    sheetData.getElementsByTagName(
+      "row"
+    );
 
   for (const riga of righe) {
     if (
-      Number(riga.getAttribute("r")) ===
-      numeroRiga
+      Number(
+        riga.getAttribute("r")
+      ) === numeroRiga
     ) {
       return riga;
     }
@@ -355,7 +361,9 @@ function trovaONuovaRiga(
     String(numeroRiga)
   );
 
-  sheetData.appendChild(nuovaRiga);
+  sheetData.appendChild(
+    nuovaRiga
+  );
 
   return nuovaRiga;
 }
@@ -389,14 +397,16 @@ function trovaONuovaCella(
     riferimento
   );
 
-  riga.appendChild(nuovaCella);
+  riga.appendChild(
+    nuovaCella
+  );
 
   return nuovaCella;
 }
 
 
-function eliminaContenutoCella(cella) {
-  const nodiDaEliminare = [];
+function svuotaCella(cella) {
+  const daEliminare = [];
 
   for (const nodo of cella.childNodes) {
     if (
@@ -404,11 +414,11 @@ function eliminaContenutoCella(cella) {
       nodo.nodeName === "is" ||
       nodo.nodeName === "f"
     ) {
-      nodiDaEliminare.push(nodo);
+      daEliminare.push(nodo);
     }
   }
 
-  nodiDaEliminare.forEach(
+  daEliminare.forEach(
     nodo => nodo.remove()
   );
 
@@ -422,10 +432,9 @@ function impostaNumero(
   riferimento,
   valore
 ) {
-  const numeroRiga =
-    Number(
-      riferimento.match(/\d+/)[0]
-    );
+  const numeroRiga = Number(
+    riferimento.match(/\d+/)[0]
+  );
 
   const riga = trovaONuovaRiga(
     xml,
@@ -439,7 +448,7 @@ function impostaNumero(
     riferimento
   );
 
-  eliminaContenutoCella(cella);
+  svuotaCella(cella);
 
   const nodoValore =
     xml.createElementNS(
@@ -447,14 +456,17 @@ function impostaNumero(
       "v"
     );
 
-  nodoValore.textContent =
-    String(
-      Number.isFinite(Number(valore))
-        ? Number(valore)
-        : 0
-    );
+  const numero =
+    Number(valore);
 
-  cella.appendChild(nodoValore);
+  nodoValore.textContent =
+    Number.isFinite(numero)
+      ? String(numero)
+      : "0";
+
+  cella.appendChild(
+    nodoValore
+  );
 }
 
 
@@ -464,10 +476,9 @@ function impostaTesto(
   riferimento,
   valore
 ) {
-  const numeroRiga =
-    Number(
-      riferimento.match(/\d+/)[0]
-    );
+  const numeroRiga = Number(
+    riferimento.match(/\d+/)[0]
+  );
 
   const riga = trovaONuovaRiga(
     xml,
@@ -481,7 +492,7 @@ function impostaTesto(
     riferimento
   );
 
-  eliminaContenutoCella(cella);
+  svuotaCella(cella);
 
   if (
     valore === null ||
@@ -511,32 +522,33 @@ function impostaTesto(
   nodoTesto.textContent =
     String(valore);
 
-  nodoIs.appendChild(nodoTesto);
-  cella.appendChild(nodoIs);
+  nodoIs.appendChild(
+    nodoTesto
+  );
+
+  cella.appendChild(
+    nodoIs
+  );
 }
 
 
-function pulisciAreaAssaggiatori(
+function pulisciRigheAssaggiatori(
   xml,
   sheetData
 ) {
-  /*
-   * Il primo campione del modello utilizza
-   * le righe da 7 a 26.
-   */
   for (
-    let riga = 7;
-    riga <= 26;
-    riga++
+    let numeroRiga = 7;
+    numeroRiga <= 26;
+    numeroRiga++
   ) {
     impostaTesto(
       xml,
       sheetData,
-      `D${riga}`,
+      `D${numeroRiga}`,
       ""
     );
 
-    const colonneNumeriche = [
+    [
       "E",
       "F",
       "G",
@@ -546,43 +558,24 @@ function pulisciAreaAssaggiatori(
       "K",
       "L",
       "M"
-    ];
-
-    colonneNumeriche.forEach(
-      colonna => {
-        const riferimento =
-          `${colonna}${riga}`;
-
-        const rigaXml =
-          trovaONuovaRiga(
-            xml,
-            sheetData,
-            riga
-          );
-
-        const cella =
-          trovaONuovaCella(
-            xml,
-            rigaXml,
-            riferimento
-          );
-
-        eliminaContenutoCella(
-          cella
-        );
-      }
-    );
+    ].forEach(colonna => {
+      impostaNumero(
+        xml,
+        sheetData,
+        `${colonna}${numeroRiga}`,
+        0
+      );
+    });
   }
 }
 
 
-function preparaDatiExcel(
+function preparaValoriScheda(
   scheda
 ) {
-  const nomeAltroDifetto =
-    (
-      scheda.altro_difetto_nome ||
-      ""
+  const nomeAltro =
+    String(
+      scheda.altro_difetto_nome || ""
     ).toLowerCase();
 
   const intensitaAltro =
@@ -591,16 +584,16 @@ function preparaDatiExcel(
     ) || 0;
 
   const oliveGelate =
-    nomeAltroDifetto.includes(
+    nomeAltro.includes(
       "olive gelate"
     ) ||
-    nomeAltroDifetto.includes(
+    nomeAltro.includes(
       "legno umido"
     )
       ? intensitaAltro
       : 0;
 
-  const altroAttributoNegativo =
+  const altroDifetto =
     oliveGelate > 0
       ? 0
       : intensitaAltro;
@@ -625,14 +618,12 @@ function preparaDatiExcel(
         scheda.avvinato_inacetito
       ) || 0,
 
-    oliveGelate:
-      oliveGelate,
+    oliveGelate,
 
     rancido:
       Number(scheda.rancido) || 0,
 
-    altro:
-      altroAttributoNegativo,
+    altroDifetto,
 
     fruttato:
       Number(scheda.fruttato) || 0,
@@ -644,53 +635,63 @@ function preparaDatiExcel(
       Number(scheda.piccante) || 0,
 
     tipoFruttato:
-      scheda.tipo_fruttato || ""
+      String(
+        scheda.tipo_fruttato || ""
+      ).toLowerCase()
   };
 }
 
 
 async function esportaExcelCoi() {
-  pulsanteEsporta.disabled = true;
+  pulsanteEsporta.disabled =
+    true;
+
+  pulsanteNuovaValutazione.disabled =
+    true;
 
   pulsanteEsporta.textContent =
     "PREPARAZIONE EXCEL...";
 
   mostraMessaggio(
-    "Recupero delle schede della sessione..."
+    "Recupero delle schede..."
   );
 
   try {
-    if (typeof JSZip === "undefined") {
+    if (
+      typeof JSZip === "undefined"
+    ) {
       throw new Error(
         "La libreria Excel non è stata caricata."
       );
     }
 
     const sessione =
-      await recuperaSessioneAttiva();
+      await recuperaValutazioneAttiva();
 
     if (!sessione) {
       throw new Error(
-        "Non risulta alcuna sessione attiva."
+        "Non risulta alcuna valutazione attiva."
       );
     }
 
-    const { data: schede, error } =
-      await client
-        .from("valutazione")
-        .select("*")
-        .eq(
-          "sessione_id",
-          sessione.id
-        )
-        .order(
-          "id",
-          { ascending: true }
-        );
+    const {
+      data: schede,
+      error
+    } = await client
+      .from("valutazione")
+      .select("*")
+      .eq(
+        "sessione_id",
+        sessione.id
+      )
+      .order(
+        "id",
+        { ascending: true }
+      );
 
     if (error) {
       throw new Error(
-        "Errore lettura valutazioni: " +
+        "Errore lettura schede: " +
         error.message
       );
     }
@@ -700,13 +701,13 @@ async function esportaExcelCoi() {
       schede.length === 0
     ) {
       throw new Error(
-        "Non sono presenti schede nella sessione attiva."
+        "Non sono ancora presenti schede nella valutazione attiva."
       );
     }
 
     if (schede.length > 20) {
       throw new Error(
-        "Il primo blocco del modello Excel può contenere massimo 20 assaggiatori."
+        "Il modello Excel supporta al massimo 20 assaggiatori per campione."
       );
     }
 
@@ -714,7 +715,7 @@ async function esportaExcelCoi() {
       "Caricamento del modello Excel..."
     );
 
-    const rispostaModello =
+    const risposta =
       await fetch(
         `${NOME_MODELLO_EXCEL}?v=1`,
         {
@@ -722,265 +723,252 @@ async function esportaExcelCoi() {
         }
       );
 
-    if (!rispostaModello.ok) {
+    if (!risposta.ok) {
       throw new Error(
-        "Non riesco a scaricare il modello " +
+        "Non riesco a caricare il modello " +
         NOME_MODELLO_EXCEL +
-        ". Controlla che il nome del file su GitHub sia esatto."
+        "."
       );
     }
 
-    const modelloArrayBuffer =
-      await rispostaModello.arrayBuffer();
+    const arrayBuffer =
+      await risposta.arrayBuffer();
 
     const zip =
       await JSZip.loadAsync(
-        modelloArrayBuffer
+        arrayBuffer
       );
 
     const percorsoFoglio =
-      await trovaPercorsoFoglioInput(
-        zip
-      );
+      await trovaFoglioInput(zip);
 
-    const fileFoglio =
+    const foglioFile =
       zip.file(percorsoFoglio);
 
-    if (!fileFoglio) {
+    if (!foglioFile) {
       throw new Error(
-        "Il foglio INPUT Data non è presente nel file Excel."
+        "Il foglio INPUT Data non è disponibile."
       );
     }
 
-    const xmlFoglioTesto =
-      await fileFoglio.async("text");
+    const foglioTesto =
+      await foglioFile.async("text");
 
     const parser =
       new DOMParser();
 
-    const xmlFoglio =
+    const xml =
       parser.parseFromString(
-        xmlFoglioTesto,
+        foglioTesto,
         "application/xml"
       );
 
-    const erroreXml =
-      xmlFoglio.getElementsByTagName(
+    if (
+      xml.getElementsByTagName(
         "parsererror"
-      );
-
-    if (erroreXml.length > 0) {
+      ).length > 0
+    ) {
       throw new Error(
-        "Errore nella lettura interna del modello Excel."
+        "Errore nella lettura del modello Excel."
       );
     }
 
     const sheetData =
-      xmlFoglio.getElementsByTagName(
+      xml.getElementsByTagName(
         "sheetData"
       )[0];
 
     if (!sheetData) {
       throw new Error(
-        "Il foglio INPUT Data non contiene l'area dati prevista."
+        "Nel foglio INPUT Data manca l'area dei dati."
       );
     }
 
-    pulisciAreaAssaggiatori(
-      xmlFoglio,
+    pulisciRigheAssaggiatori(
+      xml,
       sheetData
     );
 
-    let verdi = 0;
-    let maturi = 0;
+    let numeroVerdi = 0;
+    let numeroMaturi = 0;
 
     schede.forEach(
       (scheda, indice) => {
-        const riga = 7 + indice;
+        const numeroRiga =
+          7 + indice;
 
-        const dati =
-          preparaDatiExcel(
+        const valori =
+          preparaValoriScheda(
             scheda
           );
 
         impostaTesto(
-          xmlFoglio,
+          xml,
           sheetData,
-          `D${riga}`,
-          dati.assaggiatore
+          `D${numeroRiga}`,
+          valori.assaggiatore
         );
 
         impostaNumero(
-          xmlFoglio,
+          xml,
           sheetData,
-          `E${riga}`,
-          dati.riscaldo
+          `E${numeroRiga}`,
+          valori.riscaldo
         );
 
         impostaNumero(
-          xmlFoglio,
+          xml,
           sheetData,
-          `F${riga}`,
-          dati.muffa
+          `F${numeroRiga}`,
+          valori.muffa
         );
 
         impostaNumero(
-          xmlFoglio,
+          xml,
           sheetData,
-          `G${riga}`,
-          dati.avvinato
+          `G${numeroRiga}`,
+          valori.avvinato
         );
 
         impostaNumero(
-          xmlFoglio,
+          xml,
           sheetData,
-          `H${riga}`,
-          dati.oliveGelate
+          `H${numeroRiga}`,
+          valori.oliveGelate
         );
 
         impostaNumero(
-          xmlFoglio,
+          xml,
           sheetData,
-          `I${riga}`,
-          dati.rancido
+          `I${numeroRiga}`,
+          valori.rancido
         );
 
         impostaNumero(
-          xmlFoglio,
+          xml,
           sheetData,
-          `J${riga}`,
-          dati.altro
+          `J${numeroRiga}`,
+          valori.altroDifetto
         );
 
         impostaNumero(
-          xmlFoglio,
+          xml,
           sheetData,
-          `K${riga}`,
-          dati.fruttato
+          `K${numeroRiga}`,
+          valori.fruttato
         );
 
         impostaNumero(
-          xmlFoglio,
+          xml,
           sheetData,
-          `L${riga}`,
-          dati.amaro
+          `L${numeroRiga}`,
+          valori.amaro
         );
 
         impostaNumero(
-          xmlFoglio,
+          xml,
           sheetData,
-          `M${riga}`,
-          dati.piccante
+          `M${numeroRiga}`,
+          valori.piccante
         );
 
         if (
-          dati.tipoFruttato
-            .toLowerCase() ===
+          valori.tipoFruttato ===
           "verde"
         ) {
-          verdi++;
+          numeroVerdi++;
         }
 
         if (
-          dati.tipoFruttato
-            .toLowerCase() ===
+          valori.tipoFruttato ===
           "maturo"
         ) {
-          maturi++;
+          numeroMaturi++;
         }
       }
     );
 
-    /*
-     * Nel modello:
-     * P7 = numero di fruttati verdi
-     * P8 = numero di fruttati maturi
-     */
     impostaNumero(
-      xmlFoglio,
+      xml,
       sheetData,
       "P7",
-      verdi
+      numeroVerdi
     );
 
     impostaNumero(
-      xmlFoglio,
+      xml,
       sheetData,
       "P8",
-      maturi
+      numeroMaturi
     );
 
     const serializer =
       new XMLSerializer();
 
-    const nuovoXmlFoglio =
-      serializer.serializeToString(
-        xmlFoglio
-      );
-
     zip.file(
       percorsoFoglio,
-      nuovoXmlFoglio
-    );
-
-    /*
-     * Forza Excel a ricalcolare formule
-     * e grafici quando il file viene aperto.
-     */
-    const workbookXmlText =
-      await zip
-        .file("xl/workbook.xml")
-        .async("text");
-
-    const workbookXml =
-      parser.parseFromString(
-        workbookXmlText,
-        "application/xml"
-      );
-
-    let calcPr =
-      workbookXml.getElementsByTagName(
-        "calcPr"
-      )[0];
-
-    if (!calcPr) {
-      calcPr =
-        workbookXml.createElementNS(
-          "http://schemas.openxmlformats.org/spreadsheetml/2006/main",
-          "calcPr"
-        );
-
-      workbookXml.documentElement
-        .appendChild(calcPr);
-    }
-
-    calcPr.setAttribute(
-      "calcMode",
-      "auto"
-    );
-
-    calcPr.setAttribute(
-      "fullCalcOnLoad",
-      "1"
-    );
-
-    calcPr.setAttribute(
-      "forceFullCalc",
-      "1"
-    );
-
-    zip.file(
-      "xl/workbook.xml",
       serializer.serializeToString(
-        workbookXml
+        xml
       )
     );
+
+    const workbookFile =
+      zip.file("xl/workbook.xml");
+
+    if (workbookFile) {
+      const workbookTesto =
+        await workbookFile.async("text");
+
+      const workbookXml =
+        parser.parseFromString(
+          workbookTesto,
+          "application/xml"
+        );
+
+      let calcPr =
+        workbookXml.getElementsByTagName(
+          "calcPr"
+        )[0];
+
+      if (!calcPr) {
+        calcPr =
+          workbookXml.createElementNS(
+            "http://schemas.openxmlformats.org/spreadsheetml/2006/main",
+            "calcPr"
+          );
+
+        workbookXml.documentElement
+          .appendChild(calcPr);
+      }
+
+      calcPr.setAttribute(
+        "calcMode",
+        "auto"
+      );
+
+      calcPr.setAttribute(
+        "fullCalcOnLoad",
+        "1"
+      );
+
+      calcPr.setAttribute(
+        "forceFullCalc",
+        "1"
+      );
+
+      zip.file(
+        "xl/workbook.xml",
+        serializer.serializeToString(
+          workbookXml
+        )
+      );
+    }
 
     mostraMessaggio(
       "Creazione del file Excel..."
     );
 
-    const risultato =
+    const fileFinale =
       await zip.generateAsync({
         type: "blob",
 
@@ -989,8 +977,15 @@ async function esportaExcelCoi() {
       });
 
     const codiceCampione =
-      schede[0].codice_campione ||
-      "campione";
+      String(
+        schede[0].codice_campione ||
+        "campione"
+      )
+        .trim()
+        .replace(
+          /[^a-zA-Z0-9_-]/g,
+          "_"
+        );
 
     const nomeFile =
       `PanelCT_${codiceCampione}_` +
@@ -998,29 +993,36 @@ async function esportaExcelCoi() {
 
     const url =
       URL.createObjectURL(
-        risultato
+        fileFinale
       );
 
     const link =
       document.createElement("a");
 
     link.href = url;
-    link.download = nomeFile;
+
+    link.download =
+      nomeFile;
 
     document.body.appendChild(
       link
     );
 
     link.click();
+
     link.remove();
 
     setTimeout(
-      () => URL.revokeObjectURL(url),
-      2000
+      () => {
+        URL.revokeObjectURL(url);
+      },
+      3000
     );
 
     mostraMessaggio(
-      `Excel creato correttamente con ${schede.length} schede.`
+      "Excel creato correttamente con " +
+      schede.length +
+      " schede."
     );
 
   } catch (errore) {
@@ -1039,24 +1041,18 @@ async function esportaExcelCoi() {
     pulsanteEsporta.disabled =
       false;
 
+    pulsanteNuovaValutazione.disabled =
+      false;
+
     pulsanteEsporta.textContent =
       "📥 Esporta Excel COI";
   }
 }
 
 
-pulsanteNuovaSessione.addEventListener(
-  "click",
-  () => creaNuovaSessione(
-    "sessione"
-  )
-);
-
 pulsanteNuovaValutazione.addEventListener(
   "click",
-  () => creaNuovaSessione(
-    "valutazione"
-  )
+  creaNuovaValutazione
 );
 
 pulsanteEsporta.addEventListener(
@@ -1065,10 +1061,10 @@ pulsanteEsporta.addEventListener(
 );
 
 
-mostraSessioneAttiva();
+mostraValutazioneAttiva();
 
 
 setInterval(
-  mostraSessioneAttiva,
+  mostraValutazioneAttiva,
   15000
 );
