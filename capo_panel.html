@@ -4,33 +4,161 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <title>PanelCT - Capo Panel</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 18px;
+      background: #f4f5f2;
+      color: #20231f;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .pannello {
+      width: 100%;
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 24px;
+      background: white;
+      border: 1px solid #d6d9d2;
+      border-radius: 16px;
+      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+    }
+
+    h1 {
+      margin: 0;
+      text-align: center;
+      font-size: 34px;
+    }
+
+    .sottotitolo {
+      margin: 8px 0 28px;
+      text-align: center;
+      color: #62685f;
+      font-size: 18px;
+    }
+
+    .stato-sessione {
+      margin-bottom: 26px;
+      padding: 18px;
+      border: 1px solid #d3d9ce;
+      border-radius: 11px;
+      background: #f8faf6;
+      text-align: center;
+    }
+
+    .stato-sessione strong {
+      display: block;
+      margin-bottom: 7px;
+      font-size: 16px;
+    }
+
+    #sessioneCorrente {
+      margin: 0;
+      color: #48652f;
+      font-size: 19px;
+      font-weight: 700;
+    }
+
+    .azioni {
+      display: grid;
+      gap: 15px;
+    }
+
+    button {
+      width: 100%;
+      border: 0;
+      border-radius: 10px;
+      padding: 15px;
+      font-size: 17px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    button:active {
+      transform: scale(0.99);
+    }
+
+    #nuovaSessione {
+      background: #315b35;
+      color: white;
+    }
+
+    #nuovaValutazione {
+      background: #d98925;
+      color: white;
+    }
+
+    #esportaExcel {
+      background: #263a52;
+      color: white;
+    }
+
+    #messaggioCapoPanel {
+      margin-top: 20px;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .nota {
+      margin-top: 25px;
+      color: #687064;
+      font-size: 14px;
+      line-height: 1.5;
+      text-align: center;
+    }
+  </style>
 </head>
 
 <body>
 
-  <h1>PanelCT - Area Capo Panel</h1>
+  <main class="pannello">
 
-  <button id="nuovaSessione">Nuova sessione</button>
+    <h1>PanelCT</h1>
+    <p class="sottotitolo">Area Capo Panel</p>
 
-  <p id="sessioneCorrente">
-    Nessuna sessione attiva
-  </p>
+    <section class="stato-sessione">
+      <strong>Sessione corrente</strong>
 
-  <hr>
+      <p id="sessioneCorrente">
+        Nessuna sessione attiva
+      </p>
+    </section>
 
-  <button id="visualizzaSchede">📋 Visualizza schede</button>
+    <section class="azioni">
 
-  <br><br>
+      <button id="nuovaSessione" type="button">
+        🟢 Nuova sessione
+      </button>
 
-  <button id="esportaExcel">📥 Esporta dati</button>
+      <button id="nuovaValutazione" type="button">
+        🔄 Nuova valutazione
+      </button>
 
+      <button id="esportaExcel" type="button">
+        📥 Esporta Excel COI
+      </button>
 
-  <!-- Libreria Supabase -->
+    </section>
+
+    <p id="messaggioCapoPanel"></p>
+
+    <p class="nota">
+      “Nuova valutazione” chiude la raccolta precedente e prepara
+      una nuova prova, senza cancellare lo storico.
+    </p>
+
+  </main>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  <!-- Codice della pagina -->
-  <script src="capo_panel.js"></script>
+  <script src="capo_panel.js?v=2"></script>
 
 </body>
 
