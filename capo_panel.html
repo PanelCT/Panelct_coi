@@ -91,13 +91,8 @@
       transform: scale(0.99);
     }
 
-    #nuovaSessione {
-      background: #315b35;
-      color: white;
-    }
-
     #nuovaValutazione {
-      background: #d98925;
+      background: #315b35;
       color: white;
     }
 
@@ -128,27 +123,36 @@
   <main class="pannello">
 
     <h1>PanelCT</h1>
-    <p class="sottotitolo">Area Capo Panel</p>
+
+    <p class="sottotitolo">
+      Area Capo Panel
+    </p>
 
     <section class="stato-sessione">
-      <strong>Sessione corrente</strong>
+
+      <strong>
+        Valutazione corrente
+      </strong>
 
       <p id="sessioneCorrente">
-        Nessuna sessione attiva
+        Nessuna valutazione attiva
       </p>
+
     </section>
 
     <section class="azioni">
 
-      <button id="nuovaSessione" type="button">
-        🟢 Nuova sessione
-      </button>
-
-      <button id="nuovaValutazione" type="button">
+      <button
+        id="nuovaValutazione"
+        type="button"
+      >
         🔄 Nuova valutazione
       </button>
 
-      <button id="esportaExcel" type="button">
+      <button
+        id="esportaExcel"
+        type="button"
+      >
         📥 Esporta Excel COI
       </button>
 
@@ -157,18 +161,18 @@
     <p id="messaggioCapoPanel"></p>
 
     <p class="nota">
-      Il file Excel viene compilato con le schede della sola
-      sessione attiva, senza cancellare lo storico.
+      Prima di iniziare un nuovo campione, premi
+      “Nuova valutazione”. Le valutazioni precedenti
+      rimangono conservate nello storico.
     </p>
 
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  <!-- Libreria necessaria per modificare il modello Excel -->
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 
-  <script src="capo_panel.js?v=400"></script>
+  <script src="capo_panel.js?v=501"></script>
 
 </body>
 
