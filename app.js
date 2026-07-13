@@ -11,7 +11,8 @@ const pulsanteInvio = document.getElementById("inviaScheda");
 pulsanteInvio.addEventListener("click", async () => {
   const nome = document.getElementById("nome").value.trim();
   const cognome = document.getElementById("cognome").value.trim();
-  const codiceCampione = document.getElementById("campione").value.trim();
+  const codiceCampione =
+    document.getElementById("campione").value.trim();
 
   const tipoFruttatoSelezionato = document.querySelector(
     'input[name="tipo_fruttato"]:checked'
@@ -47,20 +48,32 @@ pulsanteInvio.addEventListener("click", async () => {
 
   try {
     const {
-      data: sessione,
+      data: sessioniAttive,
       error: erroreSessione
     } = await client
       .from("sessioni")
-      .select("id")
+      .select("id, codice_sessione, attiva")
       .eq("attiva", true)
       .order("id", { ascending: false })
-      .limit(1)
-      .single();
+      .limit(1);
 
-    if (erroreSessione || !sessione) {
-      alert("Non risulta alcuna sessione attiva.");
+    if (erroreSessione) {
+      alert(
+        "Errore lettura sessione: " +
+        erroreSessione.message
+      );
       return;
     }
+
+    if (!sessioniAttive || sessioniAttive.length === 0) {
+      alert(
+        "Non risulta alcuna sessione attiva. " +
+        "Controlla in Supabase che l’ultima sessione abbia attiva = true."
+      );
+      return;
+    }
+
+    const sessione = sessioniAttive[0];
 
     const metallico =
       altroDifettoNome === "Metallico"
@@ -75,7 +88,6 @@ pulsanteInvio.addEventListener("click", async () => {
       cognome: cognome,
       assaggiatore: `${nome} ${cognome}`,
 
-      // Difetti principali, nello stesso ordine della scheda COI
       riscaldo: Number(
         document.getElementById("riscaldo").value
       ),
@@ -92,17 +104,16 @@ pulsanteInvio.addEventListener("click", async () => {
         document.getElementById("rancido").value
       ),
 
-      // Morchia è ora compresa nella voce Riscaldo/Morchia
       morchia: 0,
-
-      // Metallico è gestito nel menu Altri difetti
       metallico: metallico,
 
       altro_difetto_nome: altroDifettoNome || null,
-      altro_difetto_intensita:
-        altroDifettoNome ? altroDifettoIntensita : 0,
 
-      // Attributi positivi
+      altro_difetto_intensita:
+        altroDifettoNome
+          ? altroDifettoIntensita
+          : 0,
+
       fruttato: Number(
         document.getElementById("fruttato").value
       ),
@@ -122,22 +133,26 @@ pulsanteInvio.addEventListener("click", async () => {
       note: document.getElementById("note").value.trim()
     };
 
-    const { error } = await client
+    const { error: erroreInvio } = await client
       .from("valutazione")
       .insert([dati]);
 
-    if (error) {
-      alert("Errore durante l’invio: " + error.message);
+    if (erroreInvio) {
+      alert(
+        "Errore durante l’invio: " +
+        erroreInvio.message
+      );
       return;
     }
 
     alert("Scheda inviata correttamente!");
 
-    // Azzera i valori per una nuova compilazione
-    document.querySelectorAll('input[type="range"]').forEach(slider => {
-      slider.value = 0;
-      slider.dispatchEvent(new Event("input"));
-    });
+    document
+      .querySelectorAll('input[type="range"]')
+      .forEach(slider => {
+        slider.value = 0;
+        slider.dispatchEvent(new Event("input"));
+      });
 
     document
       .querySelectorAll('input[name="tipo_fruttato"]')
