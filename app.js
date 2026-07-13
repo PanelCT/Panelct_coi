@@ -9,10 +9,10 @@ const client = supabase.createClient(
 const pulsanteInvio = document.getElementById("inviaScheda");
 
 pulsanteInvio.addEventListener("click", async () => {
+
   const nome = document.getElementById("nome").value.trim();
   const cognome = document.getElementById("cognome").value.trim();
-  const codiceCampione =
-    document.getElementById("campione").value.trim();
+  const codiceCampione = document.getElementById("campione").value.trim();
 
   const tipoFruttatoSelezionato = document.querySelector(
     'input[name="tipo_fruttato"]:checked'
@@ -39,7 +39,7 @@ pulsanteInvio.addEventListener("click", async () => {
   }
 
   if (altroDifettoNome && altroDifettoIntensita === 0) {
-    alert("Indica l’intensità dell’altro difetto selezionato.");
+    alert("Indica l'intensità dell'altro difetto.");
     return;
   }
 
@@ -47,21 +47,19 @@ pulsanteInvio.addEventListener("click", async () => {
   pulsanteInvio.textContent = "INVIO IN CORSO...";
 
   try {
+
     const {
       data: sessioniAttive,
       error: erroreSessione
     } = await client
       .from("sessioni")
-      .select("Id, codice_sessione, attiva")
+      .select("id,codice_sessione,attiva")
       .eq("attiva", true)
-      .order("Id", { ascending: false })
+      .order("id", { ascending: false })
       .limit(1);
 
     if (erroreSessione) {
-      alert(
-        "Errore lettura sessione: " +
-        erroreSessione.message
-      );
+      alert("Errore lettura sessione: " + erroreSessione.message);
       return;
     }
 
@@ -78,92 +76,87 @@ pulsanteInvio.addEventListener("click", async () => {
         : 0;
 
     const dati = {
-      sessione_id: sessione.Id,
+
+      sessione_id: sessione.id,
 
       codice_campione: codiceCampione,
+
       nome: nome,
+
       cognome: cognome,
-      assaggiatore: `${nome} ${cognome}`,
 
-      riscaldo: Number(
-        document.getElementById("riscaldo").value
-      ),
+      assaggiatore: nome + " " + cognome,
 
-      muffa_umidita: Number(
-        document.getElementById("muffa").value
-      ),
+      riscaldo: Number(document.getElementById("riscaldo").value),
 
-      avvinato_inacetito: Number(
-        document.getElementById("avvinato").value
-      ),
+      muffa_umidita: Number(document.getElementById("muffa").value),
 
-      rancido: Number(
-        document.getElementById("rancido").value
-      ),
+      avvinato_inacetito: Number(document.getElementById("avvinato").value),
+
+      rancido: Number(document.getElementById("rancido").value),
 
       morchia: 0,
+
       metallico: metallico,
 
       altro_difetto_nome: altroDifettoNome || null,
 
       altro_difetto_intensita:
-        altroDifettoNome
-          ? altroDifettoIntensita
-          : 0,
+        altroDifettoNome ? altroDifettoIntensita : 0,
 
-      fruttato: Number(
-        document.getElementById("fruttato").value
-      ),
+      fruttato: Number(document.getElementById("fruttato").value),
 
-      tipo_fruttato: tipoFruttatoSelezionato
-        ? tipoFruttatoSelezionato.value
-        : null,
+      tipo_fruttato:
+        tipoFruttatoSelezionato
+          ? tipoFruttatoSelezionato.value
+          : null,
 
-      amaro: Number(
-        document.getElementById("amaro").value
-      ),
+      amaro: Number(document.getElementById("amaro").value),
 
-      piccante: Number(
-        document.getElementById("piccante").value
-      ),
+      piccante: Number(document.getElementById("piccante").value),
 
       note: document.getElementById("note").value.trim()
+
     };
 
-    const { error: erroreInvio } = await client
+    const { error } = await client
       .from("valutazione")
       .insert([dati]);
 
-    if (erroreInvio) {
-      alert(
-        "Errore durante l’invio: " +
-        erroreInvio.message
-      );
+    if (error) {
+      alert("Errore durante l'invio: " + error.message);
       return;
     }
 
     alert("Scheda inviata correttamente!");
 
-    document
-      .querySelectorAll('input[type="range"]')
-      .forEach(slider => {
-        slider.value = 0;
-        slider.dispatchEvent(new Event("input"));
-      });
+    document.querySelectorAll('input[type="range"]').forEach(slider => {
+      slider.value = 0;
+      slider.dispatchEvent(new Event("input"));
+    });
 
     document
       .querySelectorAll('input[name="tipo_fruttato"]')
-      .forEach(radio => {
-        radio.checked = false;
-      });
+      .forEach(radio => radio.checked = false);
 
     document.getElementById("altro_difetto_nome").value = "";
+
     document.getElementById("note").value = "";
 
-  } catch (errore) {
-    alert("Errore imprevisto: " + errore.message);
-  } finally {
-    pulsanteInvio.disabled = false;
-    pulsanteInvio.textContent = "INVIA SCHEDA";
   }
+
+  catch (errore) {
+
+    alert("Errore imprevisto: " + errore.message);
+
+  }
+
+  finally {
+
+    pulsanteInvio.disabled = false;
+
+    pulsanteInvio.textContent = "INVIA SCHEDA";
+
+  }
+
 });
