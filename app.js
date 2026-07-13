@@ -52,9 +52,9 @@ pulsanteInvio.addEventListener("click", async () => {
       error: erroreSessione
     } = await client
       .from("sessioni")
-      .select("id, codice_sessione, attiva")
+      .select("Id, codice_sessione, attiva")
       .eq("attiva", true)
-      .order("id", { ascending: false })
+      .order("Id", { ascending: false })
       .limit(1);
 
     if (erroreSessione) {
@@ -66,10 +66,7 @@ pulsanteInvio.addEventListener("click", async () => {
     }
 
     if (!sessioniAttive || sessioniAttive.length === 0) {
-      alert(
-        "Non risulta alcuna sessione attiva. " +
-        "Controlla in Supabase che l’ultima sessione abbia attiva = true."
-      );
+      alert("Non risulta alcuna sessione attiva.");
       return;
     }
 
@@ -81,7 +78,7 @@ pulsanteInvio.addEventListener("click", async () => {
         : 0;
 
     const dati = {
-      sessione_id: sessione.id,
+      sessione_id: sessione.Id,
 
       codice_campione: codiceCampione,
       nome: nome,
