@@ -28,9 +28,12 @@ const pulsanteEsporta =
   document.getElementById("esportaExcel");
 
 
-// MESSAGGI
+// MOSTRA I MESSAGGI NEL CAPO PANEL
 
-function mostraMessaggio(testo, errore = false) {
+function mostraMessaggio(
+  testo,
+  errore = false
+) {
   messaggio.textContent = testo;
 
   messaggio.style.color = errore
@@ -39,32 +42,41 @@ function mostraMessaggio(testo, errore = false) {
 }
 
 
-// GENERA IL CODICE DELLA NUOVA VALUTAZIONE
+// CREA IL CODICE DELLA NUOVA VALUTAZIONE
 
 function generaCodiceValutazione() {
   const data = new Date();
 
-  const anno = data.getFullYear();
+  const completaConZero = numero =>
+    String(numero).padStart(2, "0");
 
-  const mese = String(
-    data.getMonth() + 1
-  ).padStart(2, "0");
+  const anno =
+    data.getFullYear();
 
-  const giorno = String(
-    data.getDate()
-  ).padStart(2, "0");
+  const mese =
+    completaConZero(
+      data.getMonth() + 1
+    );
 
-  const ore = String(
-    data.getHours()
-  ).padStart(2, "0");
+  const giorno =
+    completaConZero(
+      data.getDate()
+    );
 
-  const minuti = String(
-    data.getMinutes()
-  ).padStart(2, "0");
+  const ore =
+    completaConZero(
+      data.getHours()
+    );
 
-  const secondi = String(
-    data.getSeconds()
-  ).padStart(2, "0");
+  const minuti =
+    completaConZero(
+      data.getMinutes()
+    );
+
+  const secondi =
+    completaConZero(
+      data.getSeconds()
+    );
 
   return (
     `PANEL-${anno}${mese}${giorno}-` +
@@ -73,21 +85,34 @@ function generaCodiceValutazione() {
 }
 
 
-// RECUPERA L'ULTIMA VALUTAZIONE ATTIVA
+// RECUPERA LA VALUTAZIONE ATTIVA
 
 async function recuperaValutazioneAttiva() {
-  const { data, error } = await client
+  const {
+    data,
+    error
+  } = await client
     .from("sessioni")
-    .select("id, codice_sessione, attiva")
+    .select(
+      "id,codice_sessione,attiva"
+    )
     .eq("attiva", true)
-    .order("id", { ascending: false })
+    .order(
+      "id",
+      { ascending: false }
+    )
     .limit(1);
 
   if (error) {
-    throw new Error(error.message);
+    throw new Error(
+      error.message
+    );
   }
 
-  if (!data || data.length === 0) {
+  if (
+    !data ||
+    data.length === 0
+  ) {
     return null;
   }
 
@@ -95,37 +120,9 @@ async function recuperaValutazioneAttiva() {
 }
 
 
-// CONTA LE SCHEDE DELLA VALUTAZIONE ATTIVA
+// AGGIORNA SESSIONE E NUMERO SCHEDE
 
-async function aggiornaConteggioSchede(sessioneId) {
-  const { count, error } = await client
-    .from("valutazione")
-    .select("*", {
-      count: "exact",
-      head: true
-    })
-    .eq("sessione_id", sessioneId);
-
-  if (error) {
-    mostraMessaggio(
-      "Valutazione attiva, ma non riesco a contare le schede: " +
-      error.message,
-      true
-    );
-
-    return;
-  }
-
-  mostraMessaggio(
-    "Schede ricevute: " +
-    (count ?? 0)
-  );
-}
-
-
-// MOSTRA LA VALUTAZIONE ATTIVA
-
-async function mostraValutazioneAttiva() {
+async function aggiornaPannello() {
   try {
     const sessione =
       await recuperaValutazioneAttiva();
@@ -142,8 +139,32 @@ async function mostraValutazioneAttiva() {
     testoSessione.textContent =
       sessione.codice_sessione;
 
-    await aggiornaConteggioSchede(
-      sessione.id
+    const {
+      count,
+      error
+    } = await client
+      .from("valutazione")
+      .select(
+        "*",
+        {
+          count: "exact",
+          head: true
+        }
+      )
+      .eq(
+        "sessione_id",
+        sessione.id
+      );
+
+    if (error) {
+      throw new Error(
+        error.message
+      );
+    }
+
+    mostraMessaggio(
+      "Schede ricevute: " +
+      (count ?? 0)
     );
 
   } catch (errore) {
@@ -151,7 +172,7 @@ async function mostraValutazioneAttiva() {
       "Errore nel caricamento";
 
     mostraMessaggio(
-      "Errore lettura valutazione: " +
+      "Errore: " +
       errore.message,
       true
     );
@@ -171,25 +192,33 @@ async function creaNuovaValutazione() {
     return;
   }
 
-  pulsanteNuovaValutazione.disabled = true;
-  pulsanteEsporta.disabled = true;
+  pulsanteNuovaValutazione.disabled =
+    true;
+
+  pulsanteEsporta.disabled =
+    true;
 
   mostraMessaggio(
     "Creazione della nuova valutazione..."
   );
 
   try {
-    const { error: erroreChiusura } =
-      await client
-        .from("sessioni")
-        .update({
-          attiva: false
-        })
-        .eq("attiva", true);
+    const {
+      error: erroreChiusura
+    } = await client
+      .from("sessioni")
+      .update({
+        attiva: false
+      })
+      .eq(
+        "attiva",
+        true
+      );
 
     if (erroreChiusura) {
       throw new Error(
-        "Impossibile chiudere la valutazione precedente: " +
+        "Impossibile chiudere la " +
+        "valutazione precedente: " +
         erroreChiusura.message
       );
     }
@@ -198,8 +227,8 @@ async function creaNuovaValutazione() {
       generaCodiceValutazione();
 
     const {
-      data: nuovaValutazione,
-      error: erroreCreazione
+      data,
+      error
     } = await client
       .from("sessioni")
       .insert([
@@ -209,31 +238,34 @@ async function creaNuovaValutazione() {
         }
       ])
       .select(
-        "id, codice_sessione, attiva"
+        "id,codice_sessione,attiva"
       )
       .single();
 
-    if (erroreCreazione) {
+    if (error) {
       throw new Error(
-        erroreCreazione.message
+        error.message
       );
     }
 
     testoSessione.textContent =
-      nuovaValutazione.codice_sessione;
+      data.codice_sessione;
 
     mostraMessaggio(
-      "Nuova valutazione pronta. Schede ricevute: 0"
+      "Nuova valutazione pronta. " +
+      "Schede ricevute: 0"
     );
 
   } catch (errore) {
     mostraMessaggio(
-      "Errore: " + errore.message,
+      "Errore: " +
+      errore.message,
       true
     );
 
     alert(
-      "Errore: " + errore.message
+      "Errore: " +
+      errore.message
     );
 
   } finally {
@@ -246,165 +278,187 @@ async function creaNuovaValutazione() {
 }
 
 
-// TROVA IL FOGLIO DATI ALL'INTERNO DELL'EXCEL
+// TROVA IL FOGLIO DATI NEL MODELLO EXCEL
 
 async function trovaFoglioInput(zip) {
   const workbookFile =
-    zip.file("xl/workbook.xml");
+    zip.file(
+      "xl/workbook.xml"
+    );
 
   const relazioniFile =
     zip.file(
       "xl/_rels/workbook.xml.rels"
     );
 
-  if (!workbookFile || !relazioniFile) {
+  if (
+    !workbookFile ||
+    !relazioniFile
+  ) {
     throw new Error(
-      "Il modello Excel non contiene la struttura prevista."
+      "Il modello Excel non contiene " +
+      "la struttura prevista."
     );
   }
 
   const workbookTesto =
-    await workbookFile.async("text");
+    await workbookFile.async(
+      "text"
+    );
 
   const relazioniTesto =
-    await relazioniFile.async("text");
-
-  const parser =
-    new DOMParser();
-
-  const workbookXml =
-    parser.parseFromString(
-      workbookTesto,
-      "application/xml"
+    await relazioniFile.async(
+      "text"
     );
 
-  const relazioniXml =
-    parser.parseFromString(
-      relazioniTesto,
-      "application/xml"
-    );
-
-  const fogli =
-    workbookXml.getElementsByTagNameNS(
-      "*",
-      "sheet"
-    );
-
-  const nomiPossibili = [
+  const nomiAccettati = [
     "input data",
     "dati input",
     "dati panel"
   ];
 
+  const tagFogli =
+    workbookTesto.match(
+      /<(?:[\w-]+:)?sheet\b[^>]*\/?>/gi
+    ) || [];
+
   let relazioneId = null;
-  const fogliPresenti = [];
 
-  for (const foglio of fogli) {
+  const nomiTrovati = [];
+
+  for (const tag of tagFogli) {
+    const nomeMatch =
+      tag.match(
+        /\bname\s*=\s*["']([^"']+)["']/i
+      );
+
+    const relazioneMatch =
+      tag.match(
+        /\br:id\s*=\s*["']([^"']+)["']/i
+      );
+
+    if (!nomeMatch) {
+      continue;
+    }
+
     const nomeFoglio =
-      (
-        foglio.getAttribute("name") ||
-        ""
-      )
-        .trim()
-        .toLowerCase();
+      nomeMatch[1].trim();
 
-    fogliPresenti.push(nomeFoglio);
+    nomiTrovati.push(
+      nomeFoglio
+    );
 
     if (
-      nomiPossibili.includes(
-        nomeFoglio
+      nomiAccettati.includes(
+        nomeFoglio.toLowerCase()
       )
     ) {
       relazioneId =
-        foglio.getAttribute("r:id") ||
-        foglio.getAttributeNS(
-          "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
-          "id"
-        );
+        relazioneMatch
+          ? relazioneMatch[1]
+          : null;
 
       break;
     }
   }
 
   if (!relazioneId) {
+    const percorsoRiserva =
+      "xl/worksheets/sheet1.xml";
+
+    if (
+      zip.file(
+        percorsoRiserva
+      )
+    ) {
+      return percorsoRiserva;
+    }
+
     throw new Error(
-      "Non trovo il foglio dati nel modello. " +
+      "Non trovo il foglio dati. " +
       "Fogli presenti: " +
-      fogliPresenti.join(", ")
+      nomiTrovati.join(", ")
     );
   }
 
-  const relazioni =
-    relazioniXml.getElementsByTagNameNS(
-      "*",
-      "Relationship"
-    );
+  const tagRelazioni =
+    relazioniTesto.match(
+      /<(?:[\w-]+:)?Relationship\b[^>]*\/?>/gi
+    ) || [];
 
-  for (const relazione of relazioni) {
+  for (
+    const tagRelazione
+    of tagRelazioni
+  ) {
+    const idMatch =
+      tagRelazione.match(
+        /\bId\s*=\s*["']([^"']+)["']/i
+      );
+
+    const targetMatch =
+      tagRelazione.match(
+        /\bTarget\s*=\s*["']([^"']+)["']/i
+      );
+
     if (
-      relazione.getAttribute("Id") ===
-      relazioneId
+      !idMatch ||
+      idMatch[1] !== relazioneId ||
+      !targetMatch
     ) {
-      let percorso =
-        relazione.getAttribute("Target");
+      continue;
+    }
 
-      if (!percorso) {
-        break;
-      }
-
-      percorso =
-        percorso.replace(/\\/g, "/");
-
-      if (
-        percorso.startsWith("/xl/")
-      ) {
-        percorso =
-          percorso.substring(1);
-
-      } else if (
-        percorso.startsWith("xl/")
-      ) {
-        // Il percorso è già corretto.
-
-      } else if (
-        percorso.startsWith("../")
-      ) {
-        percorso =
-          percorso.replace(
-            /^(\.\.\/)+/,
-            ""
-          );
-
-        if (
-          !percorso.startsWith("xl/")
-        ) {
-          percorso =
-            "xl/" + percorso;
-        }
-
-      } else {
-        percorso =
-          "xl/" + percorso;
-      }
-
-      if (!zip.file(percorso)) {
-        throw new Error(
-          "Percorso interno del foglio non valido: " +
-          percorso
+    let percorso =
+      targetMatch[1]
+        .replace(/\\/g, "/")
+        .trim()
+        .replace(/^\//, "")
+        .replace(
+          /^(\.\.\/)+/,
+          ""
         );
-      }
 
+    if (
+      percorso.startsWith(
+        "worksheets/"
+      )
+    ) {
+      percorso =
+        "xl/" + percorso;
+
+    } else if (
+      !percorso.startsWith(
+        "xl/"
+      )
+    ) {
+      percorso =
+        "xl/" + percorso;
+    }
+
+    if (
+      zip.file(percorso)
+    ) {
       return percorso;
     }
   }
 
+  const percorsoRiserva =
+    "xl/worksheets/sheet1.xml";
+
+  if (
+    zip.file(
+      percorsoRiserva
+    )
+  ) {
+    return percorsoRiserva;
+  }
+
   throw new Error(
-    "Ho trovato il foglio dati, ma non il suo collegamento interno."
+    "Il foglio dati è stato trovato, " +
+    "ma il file interno non è disponibile."
   );
-}
-
-
-// CERCA O CREA UNA RIGA XML
+  }
+// CERCA O CREA UNA RIGA NEL FOGLIO EXCEL
 
 function trovaONuovaRiga(
   xml,
@@ -412,7 +466,8 @@ function trovaONuovaRiga(
   numeroRiga
 ) {
   const righe =
-    sheetData.getElementsByTagName(
+    sheetData.getElementsByTagNameNS(
+      "*",
       "row"
     );
 
@@ -445,7 +500,7 @@ function trovaONuovaRiga(
 }
 
 
-// CERCA O CREA UNA CELLA XML
+// CERCA O CREA UNA CELLA
 
 function trovaONuovaCella(
   xml,
@@ -453,7 +508,10 @@ function trovaONuovaCella(
   riferimento
 ) {
   const celle =
-    riga.getElementsByTagName("c");
+    riga.getElementsByTagNameNS(
+      "*",
+      "c"
+    );
 
   for (const cella of celle) {
     if (
@@ -483,31 +541,37 @@ function trovaONuovaCella(
 }
 
 
-// SVUOTA IL CONTENUTO DELLA CELLA,
-// MANTENENDO LA FORMATTAZIONE
+// SVUOTA UNA CELLA MANTENENDO LA FORMATTAZIONE
 
 function svuotaCella(cella) {
-  const daEliminare = [];
+  const nodi =
+    Array.from(
+      cella.childNodes
+    );
 
-  for (const nodo of cella.childNodes) {
+  for (const nodo of nodi) {
+    const nome =
+      nodo.localName ||
+      nodo.nodeName;
+
     if (
-      nodo.nodeName === "v" ||
-      nodo.nodeName === "is" ||
-      nodo.nodeName === "f"
+      nome === "v" ||
+      nome === "is" ||
+      nome === "f"
     ) {
-      daEliminare.push(nodo);
+      cella.removeChild(
+        nodo
+      );
     }
   }
 
-  daEliminare.forEach(
-    nodo => nodo.remove()
+  cella.removeAttribute(
+    "t"
   );
-
-  cella.removeAttribute("t");
 }
 
 
-// SCRIVE UN NUMERO IN UNA CELLA
+// SCRIVE UN NUMERO NELLA CELLA
 
 function impostaNumero(
   xml,
@@ -517,7 +581,9 @@ function impostaNumero(
 ) {
   const numeroRiga =
     Number(
-      riferimento.match(/\d+/)[0]
+      riferimento.match(
+        /\d+/
+      )[0]
     );
 
   const riga =
@@ -534,16 +600,18 @@ function impostaNumero(
       riferimento
     );
 
-  svuotaCella(cella);
+  svuotaCella(
+    cella
+  );
+
+  const numero =
+    Number(valore);
 
   const nodoValore =
     xml.createElementNS(
       "http://schemas.openxmlformats.org/spreadsheetml/2006/main",
       "v"
     );
-
-  const numero =
-    Number(valore);
 
   nodoValore.textContent =
     Number.isFinite(numero)
@@ -556,7 +624,7 @@ function impostaNumero(
 }
 
 
-// SCRIVE UN TESTO IN UNA CELLA
+// SCRIVE UN TESTO NELLA CELLA
 
 function impostaTesto(
   xml,
@@ -566,7 +634,9 @@ function impostaTesto(
 ) {
   const numeroRiga =
     Number(
-      riferimento.match(/\d+/)[0]
+      riferimento.match(
+        /\d+/
+      )[0]
     );
 
   const riga =
@@ -583,13 +653,19 @@ function impostaTesto(
       riferimento
     );
 
-  svuotaCella(cella);
+  svuotaCella(
+    cella
+  );
 
-  if (
+  const testo =
     valore === null ||
-    valore === undefined ||
-    String(valore).trim() === ""
-  ) {
+    valore === undefined
+      ? ""
+      : String(
+          valore
+        ).trim();
+
+  if (!testo) {
     return;
   }
 
@@ -611,7 +687,7 @@ function impostaTesto(
     );
 
   nodoTesto.textContent =
-    String(valore);
+    testo;
 
   nodoIs.appendChild(
     nodoTesto
@@ -623,25 +699,25 @@ function impostaTesto(
 }
 
 
-// PULISCE LE RIGHE DEGLI ASSAGGIATORI
+// PULISCE LE RIGHE DEL PRIMO CAMPIONE
 
-function pulisciRigheAssaggiatori(
+function pulisciAreaDati(
   xml,
   sheetData
 ) {
   for (
-    let numeroRiga = 7;
-    numeroRiga <= 26;
-    numeroRiga++
+    let riga = 7;
+    riga <= 26;
+    riga++
   ) {
     impostaTesto(
       xml,
       sheetData,
-      `D${numeroRiga}`,
+      `D${riga}`,
       ""
     );
 
-    [
+    const colonneNumeriche = [
       "E",
       "F",
       "G",
@@ -651,57 +727,85 @@ function pulisciRigheAssaggiatori(
       "K",
       "L",
       "M"
-    ].forEach(colonna => {
+    ];
+
+    for (
+      const colonna
+      of colonneNumeriche
+    ) {
       impostaNumero(
         xml,
         sheetData,
-        `${colonna}${numeroRiga}`,
+        `${colonna}${riga}`,
         0
       );
-    });
+    }
   }
+
+  impostaNumero(
+    xml,
+    sheetData,
+    "P7",
+    0
+  );
+
+  impostaNumero(
+    xml,
+    sheetData,
+    "P8",
+    0
+  );
 }
 
 
-// CONVERTE UNA SCHEDA SUPABASE
-// NEI CAMPI DEL MODELLO EXCEL
+// CONVERTE I DATI DELLA SCHEDA
+// NEL FORMATO DEL MODELLO COI
 
 function preparaValoriScheda(
   scheda
 ) {
-  const nomeAltro =
+  const nomeAltroDifetto =
     String(
       scheda.altro_difetto_nome ||
       ""
-    ).toLowerCase();
+    )
+      .trim()
+      .toLowerCase();
 
-  const intensitaAltro =
+  const intensitaAltroDifetto =
     Number(
       scheda.altro_difetto_intensita
     ) || 0;
 
   const oliveGelate =
     (
-      nomeAltro.includes(
+      nomeAltroDifetto.includes(
         "olive gelate"
       ) ||
-      nomeAltro.includes(
+      nomeAltroDifetto.includes(
         "legno umido"
       )
     )
-      ? intensitaAltro
+      ? intensitaAltroDifetto
       : 0;
 
   const altroDifetto =
     oliveGelate > 0
       ? 0
-      : intensitaAltro;
+      : intensitaAltroDifetto;
+
+  const nomeCompleto =
+    (
+      `${scheda.nome || ""} ` +
+      `${scheda.cognome || ""}`
+    ).trim();
 
   return {
     assaggiatore:
-      (
-        `${scheda.nome || ""} ` +
-        `${scheda.cognome || ""}`
+      nomeCompleto ||
+      String(
+        scheda.assaggiatore ||
+        ""
       ).trim(),
 
     riscaldo:
@@ -747,7 +851,8 @@ function preparaValoriScheda(
 
     tipoFruttato:
       String(
-        scheda.tipo_fruttato || ""
+        scheda.tipo_fruttato ||
+        ""
       )
         .trim()
         .toLowerCase()
@@ -755,11 +860,97 @@ function preparaValoriScheda(
 }
 
 
+// FORZA EXCEL A RICALCOLARE
+// FORMULE E GRAFICI ALL'APERTURA
+
+async function forzaRicalcoloExcel(
+  zip
+) {
+  const workbookFile =
+    zip.file(
+      "xl/workbook.xml"
+    );
+
+  if (!workbookFile) {
+    return;
+  }
+
+  const workbookTesto =
+    await workbookFile.async(
+      "text"
+    );
+
+  const parser =
+    new DOMParser();
+
+  const workbookXml =
+    parser.parseFromString(
+      workbookTesto,
+      "application/xml"
+    );
+
+  let calcPr =
+    workbookXml
+      .getElementsByTagNameNS(
+        "*",
+        "calcPr"
+      )[0];
+
+  if (!calcPr) {
+    calcPr =
+      workbookXml
+        .createElementNS(
+          "http://schemas.openxmlformats.org/spreadsheetml/2006/main",
+          "calcPr"
+        );
+
+    workbookXml
+      .documentElement
+      .appendChild(
+        calcPr
+      );
+  }
+
+  calcPr.setAttribute(
+    "calcMode",
+    "auto"
+  );
+
+  calcPr.setAttribute(
+    "fullCalcOnLoad",
+    "1"
+  );
+
+  calcPr.setAttribute(
+    "forceFullCalc",
+    "1"
+  );
+
+  zip.file(
+    "xl/workbook.xml",
+    new XMLSerializer()
+      .serializeToString(
+        workbookXml
+      )
+  );
+
+  if (
+    zip.file(
+      "xl/calcChain.xml"
+    )
+  ) {
+    zip.remove(
+      "xl/calcChain.xml"
+    );
+  }
+}
 // ESPORTAZIONE AUTOMATICA EXCEL COI
 
 async function esportaExcelCoi() {
   pulsanteEsporta.disabled = true;
-  pulsanteNuovaValutazione.disabled = true;
+
+  pulsanteNuovaValutazione.disabled =
+    true;
 
   pulsanteEsporta.textContent =
     "PREPARAZIONE EXCEL...";
@@ -773,7 +964,8 @@ async function esportaExcelCoi() {
       typeof JSZip === "undefined"
     ) {
       throw new Error(
-        "La libreria Excel non è stata caricata."
+        "La libreria necessaria per Excel " +
+        "non è stata caricata."
       );
     }
 
@@ -798,7 +990,9 @@ async function esportaExcelCoi() {
       )
       .order(
         "id",
-        { ascending: true }
+        {
+          ascending: true
+        }
       );
 
     if (error) {
@@ -813,13 +1007,18 @@ async function esportaExcelCoi() {
       schede.length === 0
     ) {
       throw new Error(
-        "Non sono presenti schede nella valutazione attiva."
+        "Non sono presenti schede " +
+        "nella valutazione attiva."
       );
     }
 
-    if (schede.length > 20) {
+    if (
+      schede.length > 20
+    ) {
       throw new Error(
-        "Il modello Excel supporta al massimo 20 assaggiatori."
+        "Il modello Excel supporta " +
+        "al massimo 20 assaggiatori " +
+        "per campione."
       );
     }
 
@@ -827,9 +1026,22 @@ async function esportaExcelCoi() {
       "Caricamento del modello Excel..."
     );
 
+    const urlModello =
+      new URL(
+        NOME_MODELLO_EXCEL,
+        window.location.href
+      );
+
+    urlModello.searchParams.set(
+      "v",
+      String(
+        Date.now()
+      )
+    );
+
     const risposta =
       await fetch(
-        `${NOME_MODELLO_EXCEL}?v=${Date.now()}`,
+        urlModello.href,
         {
           cache: "no-store"
         }
@@ -837,41 +1049,51 @@ async function esportaExcelCoi() {
 
     if (!risposta.ok) {
       throw new Error(
-        "Non riesco a caricare il modello " +
+        "Non riesco a caricare " +
         NOME_MODELLO_EXCEL +
-        ". Verifica che sia nella cartella principale del repository."
+        ". Risposta del server: " +
+        risposta.status +
+        "."
       );
     }
 
-    const arrayBuffer =
+    const buffer =
       await risposta.arrayBuffer();
 
     const zip =
       await JSZip.loadAsync(
-        arrayBuffer
+        buffer
       );
 
     const percorsoFoglio =
-      await trovaFoglioInput(zip);
+      await trovaFoglioInput(
+        zip
+      );
 
-    const foglioFile =
-      zip.file(percorsoFoglio);
+    const fileFoglio =
+      zip.file(
+        percorsoFoglio
+      );
 
-    if (!foglioFile) {
+    if (!fileFoglio) {
       throw new Error(
-        "Il foglio dati non è disponibile nel modello."
+        "Il file interno del foglio dati " +
+        "non esiste: " +
+        percorsoFoglio
       );
     }
 
-    const foglioTesto =
-      await foglioFile.async("text");
+    const testoFoglio =
+      await fileFoglio.async(
+        "text"
+      );
 
     const parser =
       new DOMParser();
 
     const xml =
       parser.parseFromString(
-        foglioTesto,
+        testoFoglio,
         "application/xml"
       );
 
@@ -881,7 +1103,8 @@ async function esportaExcelCoi() {
       ).length > 0
     ) {
       throw new Error(
-        "Errore nella lettura del foglio Excel."
+        "Il foglio Excel non può essere " +
+        "letto correttamente."
       );
     }
 
@@ -893,21 +1116,21 @@ async function esportaExcelCoi() {
 
     if (!sheetData) {
       throw new Error(
-        "Nel foglio Excel manca l'area dei dati."
+        "Nel foglio dati manca " +
+        "la sezione sheetData."
       );
     }
 
-    pulisciRigheAssaggiatori(
+    pulisciAreaDati(
       xml,
       sheetData
     );
 
     let numeroVerdi = 0;
     let numeroMaturi = 0;
-
-    schede.forEach(
+        schede.forEach(
       (scheda, indice) => {
-        const numeroRiga =
+        const riga =
           7 + indice;
 
         const valori =
@@ -918,70 +1141,70 @@ async function esportaExcelCoi() {
         impostaTesto(
           xml,
           sheetData,
-          `D${numeroRiga}`,
+          `D${riga}`,
           valori.assaggiatore
         );
 
         impostaNumero(
           xml,
           sheetData,
-          `E${numeroRiga}`,
+          `E${riga}`,
           valori.riscaldo
         );
 
         impostaNumero(
           xml,
           sheetData,
-          `F${numeroRiga}`,
+          `F${riga}`,
           valori.muffa
         );
 
         impostaNumero(
           xml,
           sheetData,
-          `G${numeroRiga}`,
+          `G${riga}`,
           valori.avvinato
         );
 
         impostaNumero(
           xml,
           sheetData,
-          `H${numeroRiga}`,
+          `H${riga}`,
           valori.oliveGelate
         );
 
         impostaNumero(
           xml,
           sheetData,
-          `I${numeroRiga}`,
+          `I${riga}`,
           valori.rancido
         );
 
         impostaNumero(
           xml,
           sheetData,
-          `J${numeroRiga}`,
+          `J${riga}`,
           valori.altroDifetto
         );
 
         impostaNumero(
           xml,
           sheetData,
-          `K${numeroRiga}`,
+          `K${riga}`,
           valori.fruttato
         );
 
         impostaNumero(
           xml,
           sheetData,
-          `L${numeroRiga}`,
+          `L${riga}`,
           valori.amaro
         );
 
         impostaNumero(
           xml,
           sheetData,
-          `M${numeroRiga}`,
+          `M${riga}`,
           valori.piccante
         );
 
@@ -1001,7 +1224,6 @@ async function esportaExcelCoi() {
       }
     );
 
-    // Conteggio fruttato verde e maturo.
     impostaNumero(
       xml,
       sheetData,
@@ -1026,59 +1248,9 @@ async function esportaExcelCoi() {
       )
     );
 
-    // Forza il ricalcolo di formule e grafici.
-    const workbookFile =
-      zip.file("xl/workbook.xml");
-
-    if (workbookFile) {
-      const workbookTesto =
-        await workbookFile.async("text");
-
-      const workbookXml =
-        parser.parseFromString(
-          workbookTesto,
-          "application/xml"
-        );
-
-      let calcPr =
-        workbookXml.getElementsByTagNameNS(
-          "*",
-          "calcPr"
-        )[0];
-
-      if (!calcPr) {
-        calcPr =
-          workbookXml.createElementNS(
-            "http://schemas.openxmlformats.org/spreadsheetml/2006/main",
-            "calcPr"
-          );
-
-        workbookXml.documentElement
-          .appendChild(calcPr);
-      }
-
-      calcPr.setAttribute(
-        "calcMode",
-        "auto"
-      );
-
-      calcPr.setAttribute(
-        "fullCalcOnLoad",
-        "1"
-      );
-
-      calcPr.setAttribute(
-        "forceFullCalc",
-        "1"
-      );
-
-      zip.file(
-        "xl/workbook.xml",
-        serializer.serializeToString(
-          workbookXml
-        )
-      );
-    }
+    await forzaRicalcoloExcel(
+      zip
+    );
 
     mostraMessaggio(
       "Creazione del file Excel..."
@@ -1089,22 +1261,44 @@ async function esportaExcelCoi() {
         type: "blob",
 
         mimeType:
-          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+
+        compression:
+          "DEFLATE"
       });
 
-    const codiceCampione =
-      String(
-        schede[0].codice_campione ||
-        "campione"
-      )
-        .trim()
-        .replace(
-          /[^a-zA-Z0-9_-]/g,
-          "_"
-        );
+    const codiciCampione =
+      [
+        ...new Set(
+          schede
+            .map(
+              scheda =>
+                String(
+                  scheda.codice_campione ||
+                  ""
+                ).trim()
+            )
+            .filter(
+              Boolean
+            )
+        )
+      ];
+
+    const etichettaCampione =
+      codiciCampione.length === 1
+        ? codiciCampione[0]
+        : codiciCampione.length > 1
+          ? "piu_campioni"
+          : "campione";
+
+    const nomePulito =
+      etichettaCampione.replace(
+        /[^a-zA-Z0-9_-]/g,
+        "_"
+      );
 
     const nomeFile =
-      `PanelCT_${codiceCampione}_` +
+      `PanelCT_${nomePulito}_` +
       `${sessione.codice_sessione}.xlsx`;
 
     const url =
@@ -1113,32 +1307,45 @@ async function esportaExcelCoi() {
       );
 
     const link =
-      document.createElement("a");
+      document.createElement(
+        "a"
+      );
 
-    link.href = url;
-    link.download = nomeFile;
+    link.href =
+      url;
+
+    link.download =
+      nomeFile;
+
+    link.style.display =
+      "none";
 
     document.body.appendChild(
       link
     );
 
     link.click();
+
     link.remove();
 
     setTimeout(
       () => {
-        URL.revokeObjectURL(url);
+        URL.revokeObjectURL(
+          url
+        );
       },
-      3000
+      5000
     );
 
     mostraMessaggio(
       "Excel creato correttamente con " +
       schede.length +
       " schede."
+    );  } catch (errore) {
+    console.error(
+      errore
     );
 
-  } catch (errore) {
     mostraMessaggio(
       "Errore esportazione: " +
       errore.message,
@@ -1151,7 +1358,9 @@ async function esportaExcelCoi() {
     );
 
   } finally {
-    pulsanteEsporta.disabled = false;
+    pulsanteEsporta.disabled =
+      false;
+
     pulsanteNuovaValutazione.disabled =
       false;
 
@@ -1161,7 +1370,7 @@ async function esportaExcelCoi() {
 }
 
 
-// COLLEGAMENTO PULSANTI
+// COLLEGAMENTO DEI PULSANTI
 
 pulsanteNuovaValutazione.addEventListener(
   "click",
@@ -1176,12 +1385,12 @@ pulsanteEsporta.addEventListener(
 
 // CARICAMENTO INIZIALE
 
-mostraValutazioneAttiva();
+aggiornaPannello();
 
 
 // AGGIORNAMENTO AUTOMATICO OGNI 15 SECONDI
 
 setInterval(
-  mostraValutazioneAttiva,
+  aggiornaPannello,
   15000
 );
