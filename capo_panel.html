@@ -28,7 +28,7 @@
       background: white;
       border: 1px solid #d6d9d2;
       border-radius: 16px;
-      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+      box-shadow: 0 5px 20px rgba(0, 0, 0, .08);
     }
 
     h1 {
@@ -83,12 +83,12 @@
     }
 
     button:disabled {
-      opacity: 0.55;
+      opacity: .55;
       cursor: wait;
     }
 
     button:active {
-      transform: scale(0.99);
+      transform: scale(.99);
     }
 
     #nuovaValutazione {
@@ -115,7 +115,9 @@
       line-height: 1.5;
       text-align: center;
     }
+
   </style>
+
 </head>
 
 <body>
@@ -130,9 +132,7 @@
 
     <section class="stato-sessione">
 
-      <strong>
-        Valutazione corrente
-      </strong>
+      <strong>Valutazione corrente</strong>
 
       <p id="sessioneCorrente">
         Nessuna valutazione attiva
@@ -142,17 +142,11 @@
 
     <section class="azioni">
 
-      <button
-        id="nuovaValutazione"
-        type="button"
-      >
+      <button id="nuovaValutazione" type="button">
         🔄 Nuova valutazione
       </button>
 
-      <button
-        id="esportaExcel"
-        type="button"
-      >
+      <button id="esportaExcel" type="button">
         📥 Esporta Excel COI
       </button>
 
@@ -161,9 +155,9 @@
     <p id="messaggioCapoPanel"></p>
 
     <p class="nota">
-      Prima di iniziare un nuovo campione, premi
-      “Nuova valutazione”. Le valutazioni precedenti
-      rimangono conservate nello storico.
+      "Nuova valutazione" chiude la raccolta corrente e apre la successiva.
+      L'esportazione utilizza il modello COI italiano mantenendo grafici,
+      formule e impaginazione originali.
     </p>
 
   </main>
@@ -172,7 +166,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 
-  <script src="capo_panel.js?v=600"></script>
+  <script src="capo_panel.js?v=800"></script>
 
 </body>
 
