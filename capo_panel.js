@@ -457,7 +457,9 @@ async function trovaFoglioInput(zip) {
     "Il foglio dati è stato trovato, " +
     "ma il file interno non è disponibile."
   );
-  }
+}
+
+
 // CERCA O CREA UNA RIGA NEL FOGLIO EXCEL
 
 function trovaONuovaRiga(
@@ -944,6 +946,8 @@ async function forzaRicalcoloExcel(
     );
   }
 }
+
+
 // ESPORTAZIONE AUTOMATICA EXCEL COI
 
 async function esportaExcelCoi() {
@@ -1128,7 +1132,8 @@ async function esportaExcelCoi() {
 
     let numeroVerdi = 0;
     let numeroMaturi = 0;
-        schede.forEach(
+
+    schede.forEach(
       (scheda, indice) => {
         const riga =
           7 + indice;
@@ -1341,7 +1346,9 @@ async function esportaExcelCoi() {
       "Excel creato correttamente con " +
       schede.length +
       " schede."
-    );  } catch (errore) {
+    );
+
+  } catch (errore) {
     console.error(
       errore
     );
